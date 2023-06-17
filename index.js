@@ -18,7 +18,7 @@
 //   contactDetails: String,
 //   phoneNumber: String,
 //   password:String,
-  
+
 // });
 
 // const User = mongoose.model('User', userSchema);
@@ -77,9 +77,11 @@ mongoose.connect('mongodb+srv://mariyanixon:mariyanixon@cluster0.fcvdevs.mongodb
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
+  _id: String,
   name: String,
   place: String,
   age: Number,
+  isBlocked : Boolean,
   email: String,
   education: String,
   contactDetails: String,
@@ -93,7 +95,7 @@ const User = mongoose.model('User', userSchema);
 // Define the expense schema
 const expenseSchema = new mongoose.Schema({
   username: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.String,
     ref: 'User'
   },
   income: Number,
@@ -109,10 +111,11 @@ app.use(express.json());
 // Define the POST route for user registration
 app.post('/api/register', (req, res) => {
   console.log("inpost");
-  const { name, place, age, email, education, contactDetails, phoneNumber,password } = req.body;
+  const { name, place, age, email, education, contactDetails, phoneNumber, password } = req.body;
 
   // Create a new user object
   const user = new User({
+    _id : name,
     name,
     place,
     age,
@@ -140,7 +143,7 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
   console.log("IN LOGIN")
   const { name, password } = req.body;
-  console.log(name,password)
+  console.log(name, password)
 
   // Find the user in the database by email
   User.findOne({ name })
@@ -150,7 +153,7 @@ app.post('/api/login', (req, res) => {
       }
 
 
-      console.log("pwddetails",password,user.password)
+      console.log("pwddetails", password, user.password)
       // Compare the provided password with the hashed password stored in the database
       // bcrypt.compare(password, user.password, (err, isMatch) => {
       //   if (err) {
@@ -171,15 +174,15 @@ app.post('/api/login', (req, res) => {
 
       //   res.json({ name });
       // });
-      if(password===user.password){
+      if (password === user.password) {
         console.log("PASSWORD MATCHED")
-         // Generate a JWT token
-  const token = jwt.sign({ username: user.name }, 'your-secret-key');
-  console.log("token",token)
+        // Generate a JWT token
+        const token = jwt.sign({ username: user.name }, 'your-secret-key');
+        console.log("token", token)
 
-  res.json({ token });
-       // res.json({name})
-      }else{
+        res.json({ token, isBlocked : user.isBlocked });
+        // res.json({name})
+      } else {
         res.status(401).json({ message: 'Invalid password' });
       }
     })
@@ -224,7 +227,7 @@ app.post('/api/login', (req, res) => {
 //       // Other expense fields...
 //       username: userId, // Assign the ObjectId value
 //     });
-    
+
 //     // Save the expense to the database
 //     await expense.save();
 
@@ -257,9 +260,9 @@ app.post('/api/expenses', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
           }
 
-          console.log("POST EXP REQ:",req)
-          console.log("INC",req.body.income)
-          console.log("EXP",req.body.expense)
+          console.log("POST EXP REQ:", req)
+          console.log("INC", req.body.income)
+          console.log("EXP", req.body.expense)
 
           // Create a new expense
           const expense = new Expense({
@@ -313,8 +316,23 @@ app.get('/api/user', (req, res) => {
 // Define the GET route to retrieve all expenses
 app.get('/api/expenses', async (req, res) => {
   try {
-    const expenses = await Expense.find();
-    res.json(expenses);
+    const token = req.headers.authorization.split(' ')[1]; // Extract the token from the Authorization header
+
+    // Verify the JWT token
+    jwt.verify(token, 'your-secret-key', async (err, decodedToken) => {
+      if (err) {
+        console.error('Error verifying token:', err);
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+
+      const { username } = decodedToken;
+
+      const filter = username === "admin" ? undefined  : {username };
+
+      const expenses = await Expense.find(filter);
+      res.json(expenses);
+
+    });
   } catch (error) {
     console.error('Error retrieving expenses:', error);
     res.status(500).json({ success: false, error: 'Error retrieving expenses' });
@@ -357,8 +375,75 @@ app.put('/api/expenses/:id', async (req, res) => {
   }
 });
 
+app.get('/api/users', async (req, res) => {
+  try {
+    const userList = await User.find();
+    res.json(userList);
+  } catch (error) {
+    console.error('Error getting users list :', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.get('/api/user/:id', async (req, res) => {
+
+  try {
+    const userId = req.params.id;
+
+    const userInfo = await User.findById(userId);
+
+    res.json(userInfo);
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.put('/api/user/:id', async (req, res) => {
+
+  try {
+    const userId = req.params.id;
+    const updatedUser = req.body;
+    const query = { _id: userId };
+    const result = await User.replaceOne(query, updatedUser);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
+app.put('/api/user/:id/block', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const filter = { _id: userId };
+
+    const updateDef = {
+      $set: {
+        isBlocked: true
+      },
+    };
+    const resp = await User.updateOne(filter, updateDef)
+    res.json(resp);
+  } catch (error) {
+    console.error('Error while blocing user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.delete('/api/user/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const resp = await User.findByIdAndDelete(userId)
+    res.json(resp);
+  } catch (error) {
+    console.error('Error while deleting user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 // Start the server
 const port = 8080;
