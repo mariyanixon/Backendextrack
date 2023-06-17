@@ -1,69 +1,3 @@
-
-// const express = require('express');
-// const mongoose = require('mongoose');
-
-
-// // Connect to MongoDB
-// mongoose.connect('mongodb+srv://mariyanixon:mariyanixon@cluster0.fcvdevs.mongodb.net/', { useNewUrlParser: true, useUnifiedTopology: true })
-//   .then(() => console.log('Connected to MongoDB'))
-//   .catch((error) => console.error('Error connecting to MongoDB:', error));
-
-// // Define the user schema
-// const userSchema = new mongoose.Schema({
-//   name: String,
-//   place: String,
-//   age: Number,
-//   email: String,
-//   education: String,
-//   contactDetails: String,
-//   phoneNumber: String,
-//   password:String,
-
-// });
-
-// const User = mongoose.model('User', userSchema);
-
-// // Create the Express app
-// const app = express();
-// app.use(express.json());
-
-// // Define the POST route for user registration
-// app.post('/api/register', (req, res) => {
-//   console.log("inpost");
-//   const { name, place, age, email, education, contactDetails, phoneNumber } = req.body;
-
-//   // Create a new user object
-//   const user = new User({
-//     name,
-//     place,
-//     age,
-//     email,
-//     education,
-//     contactDetails,
-//     phoneNumber,
-//   });
-
-//   // Save the user to the database
-//   user.save()
-//     .then(() => {
-//       console.log('User registered:', user);
-//       res.status(200).json({ message: 'User registered successfully' });
-//     })
-//     .catch((error) => {
-//       console.error('Error registering user:', error);
-//       res.status(500).json({ message: 'Internal server error' });
-//     });
-// });
-
-// // Start the server
-// const port = 8080;
-// app.listen(port, () => {
-//   console.log(`Server running on port ${port}`);
-// });
-
-
-
-
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -154,26 +88,6 @@ app.post('/api/login', (req, res) => {
 
 
       console.log("pwddetails", password, user.password)
-      // Compare the provided password with the hashed password stored in the database
-      // bcrypt.compare(password, user.password, (err, isMatch) => {
-      //   if (err) {
-      //     console.log("PWD COMPARISON ERR")
-      //     console.error('Error comparing passwords:', err);
-      //     return res.status(500).json({ message: 'Internal server error' });
-      //   }
-
-      //   if (!isMatch) {
-      //     console.log("PWD MATCH ERROR")
-      //     return res.status(401).json({ message: 'Invalid password' });
-      //   }
-
-      //   // Generate a JSON Web Token (JWT)
-      //   // const token = jwt.sign({ userId: user._id }, 'your-secret-key');
-
-      //   // console.log("token",token)
-
-      //   res.json({ name });
-      // });
       if (password === user.password) {
         console.log("PASSWORD MATCHED")
         // Generate a JWT token
@@ -191,54 +105,6 @@ app.post('/api/login', (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     });
 });
-
-// Define the POST route to add an expense
-// app.post('/api/expenses', (req, res) => {
-//   console.log("IN ADD EXP POST")
-//   const { username, income, expense } = req.body;
-//   console.log("EXP POST USERNM:",username)
-//   console.log("EXP POST INCOME:",income)
-//   console.log("EXP POST EXP:",expense)
-
-//   // Create a new expense object
-//   const newExpense = new Expense({
-//     username,
-//     income,
-//     expense
-//   });
-//    // Save the expense to the database
-//    newExpense.save()
-//    .then(() => {
-//      console.log('Expense added:', newExpense);
-//      res.status(200).json({ message: 'Expense added successfully' });
-//    })
-//    .catch((error) => {
-//      console.error('Error adding expense:', error);
-//      res.status(500).json({ message: 'Internal server error' });
-//    });
-// });
-// app.post('/api/expenses', async (req, res) => {
-//   try {
-//     // Assuming you have the currently logged-in user's ObjectId
-//     const userId = req.user._id;
-
-//     // Create a new expense
-//     const expense = new Expense({
-//       // Other expense fields...
-//       username: userId, // Assign the ObjectId value
-//     });
-
-//     // Save the expense to the database
-//     await expense.save();
-
-//     res.status(201).json({ success: true, expense });
-//   } catch (error) {
-//     console.error('Error adding expense:', error);
-//     res.status(500).json({ success: false, error: 'Error adding expense' });
-//   }
-// });
-
-// ...
 
 app.post('/api/expenses', async (req, res) => {
   try {
@@ -293,9 +159,7 @@ app.post('/api/expenses', async (req, res) => {
   }
 });
 
-// ...
-
-
+// returns username of currently loggedin user
 app.get('/api/user', (req, res) => {
 
   console.log("IN GET USER")
@@ -375,6 +239,7 @@ app.put('/api/expenses/:id', async (req, res) => {
   }
 });
 
+// get list of all users from db
 app.get('/api/users', async (req, res) => {
   try {
     const userList = await User.find();
@@ -385,6 +250,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// get a particular user from db
 app.get('/api/user/:id', async (req, res) => {
 
   try {
@@ -399,6 +265,7 @@ app.get('/api/user/:id', async (req, res) => {
   }
 });
 
+// update a user information
 app.put('/api/user/:id', async (req, res) => {
 
   try {
@@ -414,7 +281,7 @@ app.put('/api/user/:id', async (req, res) => {
   }
 });
 
-
+// block a user- admin operation
 app.put('/api/user/:id/block', async (req, res) => {
   try {
     const userId = req.params.id;
@@ -433,6 +300,7 @@ app.put('/api/user/:id/block', async (req, res) => {
   }
 });
 
+// delete a user - admin
 app.delete('/api/user/:id', async (req, res) => {
   try {
     const userId = req.params.id;
