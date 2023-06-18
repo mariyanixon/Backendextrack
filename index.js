@@ -300,6 +300,24 @@ app.put('/api/user/:id/block', async (req, res) => {
   }
 });
 
+app.put('/api/user/:id/unblock', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const filter = { _id: userId };
+
+    const updateDef = {
+      $set: {
+        isBlocked: false
+      },
+    };
+    const resp = await User.updateOne(filter, updateDef)
+    res.json(resp);
+  } catch (error) {
+    console.error('Error while unblocing user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // delete a user - admin
 app.delete('/api/user/:id', async (req, res) => {
   try {
